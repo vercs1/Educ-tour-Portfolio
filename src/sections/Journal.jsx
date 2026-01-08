@@ -1,23 +1,56 @@
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import SectionWrapper from '../components/SectionWrapper'
 import Card from '../components/Card'
 import Badge from '../components/Badge'
 import { journalPosts } from '../data/journal'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useInView } from 'framer-motion'
-import { useRef } from 'react'
 import { FiX } from 'react-icons/fi'
 
 const Journal = () => {
   const [selectedPost, setSelectedPost] = useState(null)
+  const [isLogoOpen, setIsLogoOpen] = useState(false)
+
+  const getLogoSrc = (post) => {
+    if (!post) return null
+    switch (post.id) {
+      case 1:
+        return '/images/WorldTechJournal.jpeg'
+      case 2:
+        return '/images/CodechumJournal.jpeg'
+      case 3:
+        return '/images/RivanJournal.jpeg'
+      case 4:
+        return '/images/MataJournal.jpeg'
+      case 5:
+        return '/images/TarsierJournal.jpeg'
+      default:
+        return null
+    }
+  }
 
   const openModal = (post) => {
     setSelectedPost(post)
+    setIsLogoOpen(false)
   }
 
   const closeModal = () => {
     setSelectedPost(null)
+    setIsLogoOpen(false)
   }
+
+  // Close modal/lightbox on Escape key
+  useEffect(() => {
+    const handler = (e) => {
+      if (e.key === 'Escape') {
+        if (isLogoOpen) setIsLogoOpen(false)
+        else if (selectedPost) setSelectedPost(null)
+      }
+    }
+
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [isLogoOpen, selectedPost])
 
   return (
     <SectionWrapper id="journal">
@@ -75,14 +108,31 @@ const Journal = () => {
                 </div>
                 
                 {selectedPost.image && (
-                  <div className="w-full h-64 md:h-80 rounded-lg overflow-hidden mb-6">
+                  <div className={`w-full rounded-lg overflow-hidden mb-6 ${selectedPost.id === 1 ? 'h-96 md:h-[32rem]' : 'h-64 md:h-80'}`}>
                     <img 
                       src={selectedPost.image} 
                       alt={selectedPost.title} 
-                      className="w-full h-full object-cover"
+                      className={`w-full h-full ${selectedPost.id === 1 ? 'object-contain bg-dark-700' : 'object-cover'}`}
                     />
                   </div>
                 )}
+
+                {/* Company logo (clickable) */}
+                {selectedPost && getLogoSrc(selectedPost) && (
+                  <div className="flex justify-center md:justify-start mb-4">
+                    <button
+                      onClick={() => setIsLogoOpen(true)}
+                      className="p-0 bg-transparent border-0 cursor-pointer rounded-md focus:outline-none focus:ring-2 focus:ring-primary-400"
+                      aria-label={`Open ${selectedPost.title} image`}
+                    >
+                      <img
+                        src={getLogoSrc(selectedPost)}
+                        alt={`${selectedPost.title} logo`}
+                        className="w-36 h-36 md:w-40 md:h-40 object-contain rounded-md bg-dark-700 p-2 hover:scale-105 transition-transform"
+                      />
+                    </button>
+                  </div>
+                )}   
               </div>
 
               <div className="space-y-6">
@@ -110,6 +160,45 @@ const Journal = () => {
                     <Badge key={tag}>{tag}</Badge>
                   ))}
                 </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Logo lightbox */}
+      <AnimatePresence>
+        {isLogoOpen && selectedPost && getLogoSrc(selectedPost) && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="fixed inset-0 flex items-center justify-center p-4 bg-black/90 backdrop-blur-sm"
+            style={{ zIndex: 9999 }}
+            onClick={() => setIsLogoOpen(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="relative max-w-3xl w-full p-4"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <button
+                onClick={() => setIsLogoOpen(false)}
+                className="absolute top-3 right-3 text-gray-400 hover:text-primary-400 transition-colors p-2 rounded-full hover:bg-dark-100"
+                aria-label="Close"
+              >
+                <FiX size={24} />
+              </button>
+              <div className="w-full max-h-[80vh] flex items-center justify-center">
+                <img
+                  src={getLogoSrc(selectedPost)}
+                  alt={`${selectedPost.title} large`}
+                  className="max-w-full max-h-[80vh] object-contain rounded-md bg-dark-700 p-4"
+                />
               </div>
             </motion.div>
           </motion.div>
